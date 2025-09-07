@@ -1,4 +1,12 @@
-# config.py
+"""
+Module Description:
+-------------------
+Briefly describe what this script/module does.
+
+Author: Your Name
+Date: YYYY-MM-DD
+"""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,28 +17,72 @@ import datetime as dt
 import yaml
 
 
-"""
-This function do this 
-
-This is an example of a configuration file:
-"""
-
 #########
 # Helpers
 #########
 
-def _load_yaml(path: str | Path) -> dict:
-    txt = Path(path).read_text()
-    return yaml.safe_load(txt) or {}
+def _load_yaml(path: str | Path) -> dict[str, Any]:
+    """
+    Load a YAML file into a dictionary.
 
-def _deep_update(base: dict, override: dict) -> dict:
-    base = base.copy()
+    Args:
+        path (str | Path): Path to the YAML file.
+        It must exists, be readable and contain a YAML mapping.
+
+    Returns:
+        dict[str, Any]: Parsed YAML content as a dictionary.
+        Returns an empty dictionary if the file is empty.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        PermissionError: If the file cannot be read.
+        IsADirectoryError: If `path` is a directory.
+        yaml.YAMLError: If the file contains invalid YAML.
+        TypeError: If the YAML content is valid but not a mapping.
+    """
+    txt = Path(path).read_text(encoding="utf-8")
+    data = yaml.safe_load(txt)
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise TypeError(f"Expected a mapping, got {type(data).__name__}")
+    return data
+
+def _deep_update(
+        base: dict[str, Any],
+        override: dict[str, Any]
+) -> dict[str, Any]:
+    """
+    Merge two dictionaries recursively.
+
+    keys present in 'override' replace those in 'base' unless both values are
+    mappings, in which case they are merged recursively. Inputs are not mutated.
+
+    Args:
+        base: Thes base dictionary to start from.
+        override: The dictionary whose keys/vales overlay 'base'.
+
+    Returns:
+        A new dictionary containing the deep merge of 'base' and 'overide'.
+
+    Raises:
+        RecursionError: If nesting exceed Python's recursion limit.
+
+    Examples:
+        >>> _deep_update({"a": {"x": 1}}, {"a": {"y": 2}, "b": 3})
+        {'a': {'x': 1, 'y': 2}, 'b': 3}
+        >>> _deep_update({"a": 1}, {"a": {"x": 2}})
+        {'a': {'x': 2}}
+        >>> _deep_update({"a": {"x": 1}}, {"a": 7})
+        {'a': 7}
+    """
+    result: dict[str, Any] = dict(base)
     for k, v in override.items():
-        if isinstance(v, dict) and isinstance(base.get(k), dict):
-            base[k] = _deep_update(base[k], v)
+        if isinstance(v, dict) and isinstance(result.get(k), dict):
+            result[k] = _deep_update(result[k], v)
         else:
-            base[k] = v
-    return base
+            result[k] = v
+    return result
 
 def load_and_merge(paths: list[str | Path]) -> dict:
     cfg: dict[str, Any] = {}
