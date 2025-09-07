@@ -85,6 +85,24 @@ def _deep_update(
     return result
 
 def load_and_merge(paths: list[str | Path]) -> dict:
+    """
+    Load multiple YAML files and deep-merge them.
+
+    Args:
+        paths: List of file paths. Order matters: later paths overide earlier.
+
+    Returns:
+        A new dictionary with the merged configuration.
+        If 'path' is empty, {}.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        PermissionError: If the file cannot be read.
+        IsADirectoryError: If `path` is a directory.
+        yaml.YAMLError: If the file contains invalid YAML.
+        TypeError: If the YAML content is valid but not a mapping.
+        RecursionError: if nested mappings are to deep. 
+    """
     cfg: dict[str, Any] = {}
     for p in paths:
         cfg = _deep_update(cfg, _load_yaml(p))
