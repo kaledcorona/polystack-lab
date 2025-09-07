@@ -1,0 +1,88 @@
+[project]
+name = "PolystackLab"
+version = "0.1.0"
+description = "A slick, config-driven framework for multiview stacking, powered by Polystack"
+readme = { file = "README.md", content-type = "text/markdown" }
+license = "MIT"
+authors = [{ name = "Kaled Corona-Romero", email = "mailme_git@kaco.slmail.me" }]
+keywords = ["multiview", "machine learning", "classification", "multimodal"]
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "numpy", 
+  "pandas", 
+  "scipy",
+  "scikit-learn",
+  #"giotto-tda",
+  "matplotlib",
+  "pyyaml",
+  #"polystack",
+]
+
+[project.urls]
+Homepage = "https://github.com/kaledcorona/polystack-lab"
+Repository = "https://github.com/kaledcorona/polystack-lab"
+Issues     = "https://github.com/kaledcorona/polystack-lab/issues"
+
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["polystack-lab*"]
+
+# include the type marker and any data files you want shipped
+[tool.setuptools.package-data]
+polystack = ["py.typed", "data/*.*"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+follow_imports = "silent"
+warn_redundant_casts = true
+warn_return_any = true
+strict_equality = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_unused_ignores = true
+no_implicit_optional = true
+mypy_path = "src"
+exclude = ["^tests/.*$", "^examples/.*$"]
+
+[[tool.mypy.overrides]]
+module = "sklearn.*"
+ignore_missing_imports = true
+  
+[[tool.mypy.overrides]]
+module = "joblib.*"
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 100
+select = ["E","F","W","I","N","UP"]
+ignore = ["E501"]
+target-version = "py39"
+
+
+[tool.ruff.isort]
+known-first-party = ["polystack"]
+
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "mypy"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
