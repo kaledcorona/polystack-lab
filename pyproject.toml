@@ -87,4 +87,4 @@ dev = ["pytest", "pytest-cov", "mypy"]
 # Pytest
 [tool.pytest.ini_options]
 pythonpath = ["src/polystacklab/"]
-testpaths = ["tests"]
+testpaths = ["src/polystacklab/tests"]
