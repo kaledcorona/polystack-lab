@@ -8,6 +8,13 @@ import importlib
 import datetime as dt
 import yaml
 
+
+"""
+This function do this 
+
+This is an example of a configuration file:
+"""
+
 #########
 # Helpers
 #########
@@ -17,6 +24,7 @@ def _load_yaml(path: str | Path) -> dict:
     return yaml.safe_load(txt) or {}
 
 def _deep_update(base: dict, override: dict) -> dict:
+    base = base.copy()
     for k, v in override.items():
         if isinstance(v, dict) and isinstance(base.get(k), dict):
             base[k] = _deep_update(base[k], v)
@@ -25,7 +33,7 @@ def _deep_update(base: dict, override: dict) -> dict:
     return base
 
 def load_and_merge(paths: list[str | Path]) -> dict:
-    cfg = dict[str, Any] = {}
+    cfg: dict[str, Any] = {}
     for p in paths:
         cfg = _deep_update(cfg, _load_yaml(p))
     return cfg
@@ -52,7 +60,7 @@ def _label_for(spec: Any) -> str:
         return spec["class"].split(".")[-1]
     if isinstance(spec, str):
         return spec.split("(")[0].split(".")[-1]
-    return final
+    return "final"
 
 def _expand_seeds(cfg: dict) -> list[int]:
     # priority: explicit list > seeds.{count,base} > iterations
