@@ -1,3 +1,0 @@
-Record provenance per run: config snapshot, git rev-parse HEAD, pip freeze, wall-clock time, and hardware.
-PSeed everything consistently: Python random, NumPy, scikit-learn (via random_state), and your cv splitter.
-Make the runner accept multiple --config files and deep-merge them in order (last wins). That gives you templates in configs/ and thin experiment files in experiments/defs/ that only change what’s needed.

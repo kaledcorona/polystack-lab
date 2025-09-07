@@ -2,7 +2,7 @@ version: "3.9"
 
 x-common: &common
   build: .
-  image: polystack-research:latest
+  image: polystack-lab:latest
   shm_size: 8g
   ipc: host
   ulimits:
