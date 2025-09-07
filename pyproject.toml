@@ -83,6 +83,8 @@ known-first-party = ["polystack"]
 [project.optional-dependencies]
 dev = ["pytest", "pytest-cov", "mypy"]
 
+
+# Pytest
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src/polystacklab/"]
 testpaths = ["tests"]
