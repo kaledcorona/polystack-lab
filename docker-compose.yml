@@ -1,0 +1,54 @@
+version: "3.9"
+
+x-common: &common
+  build: .
+  image: polystack-research:latest
+  shm_size: 8g
+  ipc: host
+  ulimits:
+    memlock: -1
+    stack: 67108864
+    nofile: { soft: 4096, hard: 4096 }
+  environment:
+    # pass a token in .env, or leave empty to disable auth while local
+    - JUPYTER_TOKEN=${JUPYTER_TOKEN:-}
+    # tame thread oversubscription
+    - OMP_NUM_THREADS=1
+    - MKL_NUM_THREADS=1
+    # CUDA-friendly defaults (harmless on CPU)
+    - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64,expandable_segments:True
+    - TF_FORCE_GPU_ALLOW_GROWTH=true
+    - PYTHONUNBUFFERED=1
+    - PYTHONDONTWRITEBYTECODE=1
+    - PYTHONPATH=/workspace/src
+  volumes:
+    - ./notebooks:/workspace/notebooks
+    - ./src:/workspace/src
+    - ./configs:/workspace/configs
+    - ./data:/workspace/data
+    - ./experiments:/workspace/experiments
+  working_dir: /workspace
+  # If you have NVIDIA GPUs on the host:
+  gpus: all
+
+services:
+  jupyter:
+    <<: *common
+    container_name: polystack-jupyter
+    ports:
+      - "8888:8888"
+    command: >
+      jupyter lab --ip=0.0.0.0 --no-browser
+      --ServerApp.token=${JUPYTER_TOKEN:-}
+      --ServerApp.preferred_dir=/workspace
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8888/api/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  train:
+    <<: *common
+    container_name: polystack-train
+    # No ports; run ad-hoc commands like:
+    # docker compose run --rm train python -m yourpkg.cli --config configs/default.yaml

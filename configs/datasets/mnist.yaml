@@ -1,0 +1,72 @@
+# configs/mnist.yaml
+
+# Dataset Configs
+dataset:
+  name: mnist
+  params:
+    csv_path: data/mnist_784.csv
+
+# Data Preprocessing Options
+data:
+  test_size: 0.2
+  chunk_size: null   # int if load in chunks, else null
+  subsample: null     # null or int to Subsample datase
+  noise:
+    active: false
+    name: image/gaussian
+    params: {sigma: 0.05}
+    target: null    # "train" | "test" | "both"
+
+# Views Definition
+views:
+  available:
+    - name: raw
+    - name: grid
+      params: {rows: 3, cols: 3, grid_mode: pad, prefix: "g3_"}
+    - name: quadrants
+      params: {prefix: "q_"}
+    - name: tda
+      params:
+        include_filtrations: ["height", "radial", "density", "dilation"]
+        binarize_threshold: 0.4
+  always_include: ["raw"]
+  permutations: true # generate all permutations of views containing always_include
+
+# Model Definition
+models:
+  base:
+    default: 
+      class: sklearn.ensemble.RandomForestClassifier
+      params: {n_estimators: 100, random_state: 0}
+    by_view: # Select specific model per view
+      tda:
+        class: sklearn.svm.SVC
+        params: {probability: true, random_state: 0}
+  final:
+    choices:
+      - {class: sklearn.linear_model.LogisticRegression, params: {max_iter: 1000, random_state: 0}}
+      - {class: sklearn.ensemble.RandomForestClassifier, params: {n_estimators: 200, random_state: 0}}
+    select: 0         # choose index; or "all" to test all
+
+# Crossvalidation Configs
+cv:
+  type: "skf"         # "skf" | "kf" | "group" | "timeseries"
+  n_splits: 5
+  shuffle: true
+
+# Polystack metafeatures 
+metafeatures:
+  name: "avg_proba_ohe"   # or "avg_proba_ohe", "proba_margin_entropy"
+
+
+# Hardware Configs 
+n_jobs: 28
+random_seed: 42          # used for sampling combinations
+
+# Output Configs
+output_dir: "experiments/runs/mnist/${exp_name}/${now}"
+logs_dir: "experiments/runs/mnist/${exp_name}/logs/"
+
+# Experiment Configs
+exp_name: "exp1"
+iterations: 100 # number of times same experiment is run

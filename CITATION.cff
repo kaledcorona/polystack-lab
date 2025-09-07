@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: "Your Project Title"
+authors:
+  - family-names: Lastname
+    given-names: Firstname
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+repository-code: "https://github.com/<you>/<repo>"
+license: MIT
+version: 0.1.0
+date-released: 2025-09-05

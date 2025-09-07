@@ -1,0 +1,10 @@
+.git
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+venv/
+data/
+experiments/
+dist/
+build/
+*.egg-info/
