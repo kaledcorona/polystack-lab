@@ -205,6 +205,34 @@ def _make_estimator(spec: dict[str, Any]) -> Any:
     return cls(**params)
 
 def _label_for(spec: Any) -> str:
+    """
+    Retrieve a short label from a specification.
+
+    The label is typically the class name at the end of a dotted path.
+    If it is a dictionary, the final segment after the last dot is returned.
+    Same if it is a string. For all other cases, return 'final' (string).
+
+    Args:
+        spec (Any): Either a dict with a 'class' entry, a string or any other
+        object.
+
+    Returns:
+        str: The segment after the last dot, or 'final' if the
+        input does not match the expected formats.
+
+    Raises:
+        TypeError: If 'spec['class']' is present but not a string.
+
+    Examples:
+        >>> _label_for({"class": "sklearn.tree.DecisionTreeClassifier"})
+        'DecisionTreeClassifier'
+
+        >>> _label_for("sklearn.linear_model.LogisticRegression(max_iter=200)")
+        'LogisticRegression'
+
+        >>> _label_for(123)
+        'final'
+    """
     if isinstance(spec, dict) and "class" in spec:
         return spec["class"].split(".")[-1]
     if isinstance(spec, str):
