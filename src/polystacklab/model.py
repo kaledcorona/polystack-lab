@@ -9,7 +9,7 @@ from numpy.typing import NDArray, ArrayLike
 from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import RandomForestClassifier
 
-from polystack import Polystack  # your package
+#from polystack import Polystack  # your package
 # If your meta-features registry is exposed:
 # from polystack.meta_features import create as create_meta
 

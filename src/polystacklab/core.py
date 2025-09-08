@@ -5,7 +5,7 @@ from __future__ import annotations
 import itertools, json, time, numpy as np
 from pathlib import Path
 from typing import Iterable
-from polystack import Polystack, oof_by_view
+#from polystack import Polystack, oof_by_view
 from .config import ExperimentConfig
 from .registry import create_dataset, get_view
 from sklearn.model_selection import train_test_split
