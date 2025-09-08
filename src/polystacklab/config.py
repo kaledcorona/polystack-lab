@@ -283,15 +283,24 @@ def _expand_seeds(cfg: dict[str, Any]) -> list[int]:
         >>> _expand_seeds({"random_seed": {}})
         [0]
     """
-    # priority: explicit list > seeds.{count,base} > iterations
-    if "seeds" in cfg:
-        s = cfg["seeds"]
-        if isinstance(s, list): return [int(x) for x in s]
-        if isinstance(s, dict): return [int(s.get("base", 0)) + i for i in range(int(s.get("count", 1)))]
-        return [int(s)]
-    if "iterations" in cfg:
-        n = int(cfg["iterations"])
-        return list(range(n))  # [0..n-1]
+    if "random_seed" not in cfg:
+        raise KeyError("Missing 'random_seed' in configuration")
+
+    seed_cfg = cfg["random_seed"]
+    base = seed_cfg.get("base")
+    iterations = seed_cfg.get("iterations")
+
+    if base is not None and not isinstance(base, int):
+        raise TypeError(f"Expected int or None for base, got {type(base).__name__}")
+    if iterations is not None and not isinstance(iterations, int):
+        raise TypeError(f"Expected int or None for iterations, got {type(iterations).__name__}")
+
+    if base is not None and iterations is not None:
+        return list(range(base, base + iterations))
+    if base is not None:
+        return [base]
+    if iterations is not None:
+        return list(range(iterations))
     return [0]
 
 def _validate_config(cfg: dict[str, Any]) -> None:
