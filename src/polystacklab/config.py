@@ -109,9 +109,27 @@ def load_and_merge(paths: list[str | Path]) -> dict:
     return cfg
 
 def _substitute_placeholders(s: str, vars: dict[str, str]) -> str:
-    # ${var} expander
-    for k, v in vars.items():
-        s = s.replace(f"${{{k}}}", v)
+    """
+    Substitute placeholders of the for `${var}` in a string by its value.
+
+    Args:
+        s (str): Input string possibly containing placeholders.
+        vars (dict[str, Any]): Dict of variables name to replacement values.
+
+    Returns:
+        str: String with all placeholders substituted.
+            It remains unchange if no placeholders found.
+
+    Raises:
+        AttributeError: If wrong types passed in place of str or dict.
+        TypeError: if a replacement is not a string.
+
+    Example:
+        >>> _substitute_placeholders("Hello ${name}", {"name": "Alice"})
+        'Hello Alice'
+    """
+    for key, value in vars.items():
+        s = s.replace(f"${{{key}}}", value)
     return s
 
 def _import_object(dotted: str):
