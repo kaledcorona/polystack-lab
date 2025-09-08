@@ -6,7 +6,17 @@ multiview learning experiments. Used by the experiment runner to parse
 settings from files like `mnist.yaml`.
 
 Examples:
-    >>> resolve_config()
+    >>> from pathlib import Path
+    >>> from polystacklab.config import load_and_merge, resolve_config
+
+    cfg_dict = load_and_merge(["configs/base.yaml", "configs/experiment.yaml"])
+
+    exp_cfg = resolve_config(cfg_dict)
+
+    print("Seeds:", exp_cfg.seeds)
+    print("Output dir:", exp_cfg.output_dir)
+    print("Logs dir:", exp_cfg.logs_dir)
+    print("Final estimator(s):", exp_cfg.final_est)
 """
 
 from __future__ import annotations
