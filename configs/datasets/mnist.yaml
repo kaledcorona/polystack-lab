@@ -2,23 +2,23 @@
 
 # Dataset Configs
 dataset:
-  name: mnist
+  name: mnist   # required
   params:
-    csv_path: data/mnist_784.csv
+    csv_path: data/mnist_784.csv #required
 
 # Data Preprocessing Options
 data:
-  test_size: 0.2
-  chunk_size: null   # int if load in chunks, else null
-  subsample: null     # null or int to Subsample datase
-  noise:
+  test_size: 0.2  #required
+  chunk_size: null   # int if load in chunks, else null (optional)
+  subsample: null     # null or int to Subsample datase (optional)
+  noise:  # (optional)
     active: false
     name: image/gaussian
     params: {sigma: 0.05}
     target: null    # "train" | "test" | "both"
 
 # Views Definition
-views:
+views: # required
   available:
     - name: raw
     - name: grid
@@ -33,7 +33,7 @@ views:
   permutations: true # generate all permutations of views containing always_include
 
 # Model Definition
-models:
+models: # required
   base:
     default: 
       class: sklearn.ensemble.RandomForestClassifier
@@ -61,7 +61,6 @@ metafeatures:
 
 # Hardware Configs 
 n_jobs: 28
-random_seed: 42          # used for sampling combinations
 
 # Output Configs
 output_dir: "experiments/runs/mnist/${exp_name}/${now}"
@@ -69,4 +68,6 @@ logs_dir: "experiments/runs/mnist/${exp_name}/logs/"
 
 # Experiment Configs
 exp_name: "exp1"
-iterations: 100 # number of times same experiment is run
+random_seed: #required
+  base: 100   # Start of initial sequence or null
+  iterations: 3 # number of next sequencial steps or null
