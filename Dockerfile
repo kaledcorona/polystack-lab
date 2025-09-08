@@ -14,9 +14,10 @@ RUN groupadd -g ${GID} ${USER} && \
 WORKDIR /workspace
 
 # Python deps first (better cache)
-COPY requirements.txt /tmp/requirements.txt
+COPY pyproject.toml .
+COPY . .
 RUN pip install --upgrade pip \
-    && pip install --no-cache-dir -r /tmp/requirements.txt \
+    && pip install --no-cache-dir . \
     && pip install --no-cache-dir jupyterlab
 
 # Copy minimal source (optional; we mostly mount during dev)
