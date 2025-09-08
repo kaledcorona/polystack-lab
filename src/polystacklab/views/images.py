@@ -5,11 +5,7 @@ import math
 import numpy as np
 from numpy.typing import NDArray
 
-from ..registry import register_view, ViewOutput
-
-# ----------------------------
-# Core reshaping utilities
-# ----------------------------
+from polystack.registry import register_view, ViewOutput
 
 def as_image(
     X_flat: NDArray[np.floating] | NDArray[np.integer],
@@ -51,29 +47,20 @@ def as_image(
     if mode == "strict":
         raise ValueError(f"d={d} does not match H*W={need} and mode='strict'.")
 
-    if mode == "pad" and d < need:
-        pad = np.pad(X, ((0, 0), (0, need - d)), mode="constant", constant_values=pad_value)
-        return pad.reshape(n, H, W).astype(float, copy=False)
+    if mode == "pad":
+        if d > need:
+            raise ValueError(f"pad mode cannot reduce: d={d} > H*W={need}. Use mode='crop'.")
+        pad_width = need - d
+        padded = np.pad(X, ((0, 0), (0, pad_width)), mode="constant", constant_values=pad_value)
+        return padded.reshape(n, H, W).astype(np.float64, copy=False)
 
-    if mode == "crop" and d >= need:
-        return X[:, :need].reshape(n, H, W).astype(float, copy=False)
+    if mode == "crop":
+        if d < need:
+            raise ValueError(f"crop mode cannot expand: d={d} < H*W={need}. Use mode='pad'.")
+        cropped = X[:, :need]
+        return cropped.reshape(n, H, W).astype(np.float64, copy=False)
 
-    if mode == "pad" and d > need:
-        # pad cannot reduce; fallback to crop to keep shape valid
-        return X[:, :need].reshape(n, H, W).astype(float, copy=False)
-
-    if mode == "crop" and d < need:
-        # crop cannot expand; fallback to pad to keep shape valid
-        pad = np.pad(X, ((0, 0), (0, need - d)), mode="constant", constant_values=pad_value)
-        return pad.reshape(n, H, W).astype(float, copy=False)
-
-    # should not reach
-    raise RuntimeError("Unhandled reshape case")
-
-
-# ----------------------------
-# Grid splitting (k×k)
-# ----------------------------
+    raise ValueError(f"Unknown mode: {mode!r}.")
 
 def split_grid(
     imgs: NDArray[np.floating],
