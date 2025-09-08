@@ -1,10 +1,9 @@
 """
-Module Description:
--------------------
-Briefly describe what this script/module does.
+Configuration utilities for PolystackLab
 
-Author: Your Name
-Date: YYYY-MM-DD
+Provides functions to load, merge, and resolve YAML configurations for
+multiview learning experiments. Used by the experiment runner to parse
+settings from files like `mnist.yaml`.
 """
 
 from __future__ import annotations
@@ -880,6 +879,20 @@ def _validate_random_seed(seed_cfg: dict[str, Any]) -> None:
 
 @dataclass
 class ExperimentConfig:
+    """
+    Container for experiment configuration.
+
+    Attributes:
+        cfg: The full parsed configuration dictionary.
+        seeds: Expanded list of random seeds for the experiment.
+        base_default: Default base estimator specification, or None if not provided.
+        base_est_by_view: Mapping of view name to base estimator specification.
+        final_est: List of candidate final estimators as (label, estimator
+        specification) tuples.
+        meta_name: Name of the metafeature strategy.
+        output_dir: Directory where experiment outputs will be stored.
+        logs_dir: Directory where logs will be written.
+    """
     cfg: dict[str, Any]
     seeds: list[int]
     base_default : Any | None
@@ -890,51 +903,63 @@ class ExperimentConfig:
     logs_dir: Path
 
 def resolve_config(raw_cfg: dict[str, Any]) -> ExperimentConfig:
-    _validate_config(raw_cfg)
-    cfg = dict(raw_cfg)  # shallow copy
-    
-    seeds = _expand_seeds(cfg)
+  """Resolves a raw configuration into an ExperimentConfig object.
 
-    # 1) output paths (expand ${now} , ${exp_name})
-    now = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-    exp_name = cfg.get("exp_name", "exp")
-    def _subst(s: str) -> str:
-        return s.replace("${exp_name}", exp_name).replace("${now}", now)
-    output_dir = Path(_subst(cfg.get("output_dir", "experiments/runs/${exp_name}/${now}")))
-    logs_dir   = Path(_subst(cfg.get("logs_dir",   "experiments/runs/${exp_name}/logs")))
+  Validates the input, expands seeds, substitutes placeholders in paths,
+  and instantiates estimators.
 
+  Args:
+    raw_cfg: The raw configuration dictionary from merged YAML files.
 
-    # 2) Model instantiation
-    models = cfg.get("models", {})
-    base = models.get("base", {})
-    final = models.get("final", {})
+  Returns:
+    An ExperimentConfig object with resolved settings.
 
-    # base estimator: default + per-view overrides
-    base_default = _make_estimator(base["default"]) if base.get("default") else None
-    base_by_view = {k: _make_estimator(v) for k, v in base.get("by_view", {}).items()}
+  Raises:
+    ValueError: If the configuration is invalid (via _validate_config).
+    TypeError: If estimator specifications are invalid (via _make_estimator).
+  """
+  _validate_config(raw_cfg)
+  cfg = dict(raw_cfg)  # shallow copy
 
-     # finals: index or "all"
-    final = models.get("final", {})
-    choices = final.get("choices", [])
-    select = final.get("select", 0)
-    if select == "all":
-        final_specs = list(choices)
-    else:
-        idx = int(select)
-        final_specs = [choices[idx]] if choices else ([final] if final else [])
-    final_ests = [(_label_for(spec), _make_estimator(spec)) for spec in final_specs]
+  seeds = _expand_seeds(cfg)
 
+  # 1) output paths (expand ${now} , ${exp_name})
+  now = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+  exp_name = cfg.get("exp_name", "exp")
+  def _subst(s: str) -> str:
+    return s.replace("${exp_name}", exp_name).replace("${now}", now)
+  output_dir = Path(_subst(cfg.get("output_dir", "experiments/runs/${exp_name}/${now}")))
+  logs_dir = Path(_subst(cfg.get("logs_dir", "experiments/runs/${exp_name}/logs")))
 
-    # metafeatures (accept both keys)
-    meta_name = (cfg.get("metafeatures", {}) or cfg.get("meta", {})).get("name", "concat_proba")
+  # 2) Model instantiation
+  models = cfg.get("models", {})
+  base = models.get("base", {})
+  final = models.get("final", {})
 
-    return ExperimentConfig(
-        cfg=cfg,
-        seeds=seeds,
-        base_default=base_default,
-        base_by_view=base_by_view,
-        final_ests=final_ests,
-        meta_name=meta_name,
-        output_dir=output_dir,
-        logs_dir=logs_dir,
-    )
+  # base estimator: default + per-view overrides
+  base_default = _make_estimator(base.get("default")) if base.get("default") else None
+  base_est_by_view = {k: _make_estimator(v) for k, v in base.get("by_view", {}).items()}
+
+  # finals: index or "all"
+  choices = final.get("choices", [])
+  select = final.get("select", 0)
+  if select == "all":
+    final_specs = list(choices)
+  else:
+    idx = int(select)
+    final_specs = [choices[idx]] if choices else [final] if final else []
+  final_est = [(_label_for(spec), _make_estimator(spec)) for spec in final_specs]
+
+  # metafeatures (accept both keys)
+  meta_name = (cfg.get("metafeatures", {}) or cfg.get("meta", {})).get("name", "concat_proba")
+
+  return ExperimentConfig(
+      cfg=cfg,
+      seeds=seeds,
+      base_default=base_default,
+      base_est_by_view=base_est_by_view,
+      final_est=final_est,
+      meta_name=meta_name,
+      output_dir=output_dir,
+      logs_dir=logs_dir,
+  )
