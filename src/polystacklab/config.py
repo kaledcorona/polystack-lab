@@ -4,10 +4,13 @@ Configuration utilities for PolystackLab
 Provides functions to load, merge, and resolve YAML configurations for
 multiview learning experiments. Used by the experiment runner to parse
 settings from files like `mnist.yaml`.
+
+Examples:
+    >>> resolve_config()
 """
 
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -83,7 +86,7 @@ def _deep_update(
             result[k] = v
     return result
 
-def load_and_merge(paths: list[str | Path]) -> dict:
+def load_and_merge(paths: list[str | Path]) -> dict[str, Any]:
     """
     Load multiple YAML files and deep-merge them.
 
@@ -131,7 +134,7 @@ def _substitute_placeholders(s: str, vars: dict[str, str]) -> str:
         s = s.replace(f"${{{key}}}", value)
     return s
 
-def _import_object(dotted: str):
+def _import_object(dotted: str) -> Any:
     """
     Import an object given its dotted path.
     
@@ -164,7 +167,7 @@ def _import_object(dotted: str):
     module = importlib.import_module(module_name)
     return getattr(module, attr_name)
 
-def _make_estimator(spec: dict[str, Any]) -> Any:
+def _make_estimator(spec: dict[str, Any] | None) -> Any:
     """
     Instantiate an object from a specification dictionary.
 
@@ -176,6 +179,7 @@ def _make_estimator(spec: dict[str, Any]) -> Any:
     Args:
         spec (Any): The specification of the estimator. Must be a dictionary
         with a 'class' key and optionally a 'params' mapping.
+        If None, it uses polystack default models.
 
     Returns:
         Any: An instance of the specified class, constructed with the given
@@ -616,7 +620,7 @@ def _validate_views(views: dict[str, Any]) -> list[str]:
         if "name" not in view or not isinstance(view["name"], str) or not view["name"]:
             raise ValueError(f"views.available[{i}].name must be a non-empty string")
 
-        if "params" in view and view["params"] is not None and not isinstance(view["params"], Mapping):
+        if "params" in view and view["params"] is not None and not isinstance(view["params"], dict):
             raise ValueError(f"views.available[{i}].params must be a mapping or null")
 
         view_names.append(view["name"])
@@ -902,8 +906,8 @@ class ExperimentConfig:
     logs_dir: Path
 
 def resolve_config(raw_cfg: dict[str, Any]) -> ExperimentConfig:
-  """
-  Resolve a raw configuration into a structured `ExperimentConfig`.
+    """
+    Resolve a raw configuration into a structured `ExperimentConfig`.
 
     Steps:
       1) Validate the raw configuration.
@@ -931,16 +935,17 @@ def resolve_config(raw_cfg: dict[str, Any]) -> ExperimentConfig:
     # 3) Pahs with placeholders
     now = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
     exp_name = cfg.get("exp_name", "exp")
-    vars_map: dict[str, str]  = {"exp_name": exp_name, "now", now}
+    vars_map: dict[str, str]  = {"exp_name": exp_name, "now": now}
 
-    def subst_path(s: str, default: str) -> Path:
-        raw s if isinstance(s, str) else default
+    def subst_path(s: Any, default: str) -> Path:
+        candidate = str(s) if isinstance(s, (str, Path)) else ""
+        raw = candidate if candidate.strip() else default
         return Path(_substitute_placeholders(raw, vars_map))
 
     output_dir = subst_path(cfg.get("output_dir", ""), "experiments/runs/${exp_name}/${now}")
     logs_dir = subst_path(cfg.get("logs_dir", ""), "experiments/runs/${exp_name}/logs")
 
-    # 2) Models
+    # 4) Models
     models = cfg.get("models", {})
     base_cfg: dict[str, Any] = models.get("base", {}) or {}
     final_cfg: dict[str, Any] = models.get("final", {}) or {}
@@ -956,16 +961,17 @@ def resolve_config(raw_cfg: dict[str, Any]) -> ExperimentConfig:
     select = final_cfg.get("select", 0)
 
     if select == "all":
+        if not choices:
+            raise ValueError("models.final.choices must be non-empty when select='all'")
         final_specs = choices
     else:
-        # robust index handling
         try:
             idx = int(select)
         except (TypeError, ValueError) as e:
             raise ValueError(f"models.final.select must be an int index or 'all'; got {select!r}") from e
         if not choices:
             # allow single final spec fallback if provided (legacy shape)
-            single = final_cfg if "class" in final_cfg else None
+            single = final_cfg if isinstance(final_cfg, dict) and "class" in final_cfg else None
             if single is None:
                 raise ValueError("models.final.choices is empty and no single final spec provided")
             final_specs = [single]
@@ -975,6 +981,12 @@ def resolve_config(raw_cfg: dict[str, Any]) -> ExperimentConfig:
                     f"models.final.select index {idx} out of range 0..{len(choices)-1}"
                 )
             final_specs = [choices[idx]]
+    
+    # Build final_est (label + instance)
+    final_est: list[tuple[str, Any]] = [
+        (_label_for(spec), _make_estimator(spec)) for spec in final_specs
+    ]
+
 
     # 5) Metafeatures (accept legacy key 'meta' as fallback)
     meta_block = cfg.get("metafeatures") or cfg.get("meta") or {}
