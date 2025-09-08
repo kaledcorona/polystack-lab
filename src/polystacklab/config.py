@@ -234,9 +234,14 @@ def _label_for(spec: Any) -> str:
         'final'
     """
     if isinstance(spec, dict) and "class" in spec:
-        return spec["class"].split(".")[-1]
+        cls_path = spec["class"]
+        if not isinstance(cls_path, str):
+            raise TypeError(f"Expected string for 'class', got {type(cls_path).__name__}")
+        return cls_path.split(".")[-1]
+
     if isinstance(spec, str):
         return spec.split("(")[0].split(".")[-1]
+    
     return "final"
 
 def _expand_seeds(cfg: dict) -> list[int]:
