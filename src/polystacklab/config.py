@@ -133,6 +133,31 @@ def _substitute_placeholders(s: str, vars: dict[str, str]) -> str:
     return s
 
 def _import_object(dotted: str):
+    """
+    Import an object given its dotted path.
+    
+    The path must include both the module and the attribute name, 
+    separated by a dot (e.g. `package.module.ClassName`). The module
+    is imported and the attribute is returned.
+
+    Args:
+        dotted (str): Fully dotted path of the object to import.
+            Must contain at least one dot.
+
+    Returns:
+        Any: The imported object (class, function, or variable).
+
+    Raises:
+        ValueError: If the dotted path does not contain a dot.
+        ModuleNotFoundError: If the module cannot be imported.
+        AttributeError: If the attribute does not exist in the module.
+
+    Examples:
+        >>> _import_object("math.sqrt")
+        <built-in function sqrt>
+        >>> _import_object("pathlib.Path")
+        <class 'pathlib.Path'>
+    """
     mod, name = dotted.rsplit(".", 1)
     return getattr(importlib.import_module(mod), name)
 
