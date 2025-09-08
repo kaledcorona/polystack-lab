@@ -165,7 +165,7 @@ def _import_object(dotted: str):
     module = importlib.import_module(module_name)
     return getattr(module, attr_name)
 
-def _make_estimator(spec: Any):
+def _make_estimator(spec: dict[str, Any]) -> Any:
     """
     Instantiate an object from a specification dictionary.
 
@@ -197,11 +197,12 @@ def _make_estimator(spec: Any):
         >>> model = _make_estimator(spec)
         >>> model.fit(X, Y)
     """
-    if isinstance(spec, dict) and "class" in spec:
-        cls = _import_object(spec["class"])
-        params = dict(spec.get("params", {}))
-        return cls(**params)
-    raise TypeError(f"Unsupported estimator spec: {spec!r}")
+    if not (isinstance(spec, dict) and "class" in spec):
+        raise TypeError(f"Unsupported estimator spec: {spec!r}")
+
+    cls = _import_object(spec["class"])
+    params = dict(spec.get("params", {}))
+    return cls(**params)
 
 def _label_for(spec: Any) -> str:
     if isinstance(spec, dict) and "class" in spec:
