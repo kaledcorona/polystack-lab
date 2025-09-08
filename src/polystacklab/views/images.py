@@ -369,7 +369,7 @@ def view_quadrants(
         return grid_dict
 
     # Apply prefix without copying arrays.
-    return {f"{prefix}{k}": v for k, v in grid_dict.items()}@register_view("grid")
+    return {f"{prefix}{k}": v for k, v in grid_dict.items()}
 
 @register_view("grid")
 def view_grid(
@@ -435,3 +435,4 @@ def view_grid(
         out.update(grid_views)
 
     return out
+
