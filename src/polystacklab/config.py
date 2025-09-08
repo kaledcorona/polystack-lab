@@ -880,18 +880,17 @@ def _validate_random_seed(seed_cfg: dict[str, Any]) -> None:
 @dataclass
 class ExperimentConfig:
     """
-    Container for experiment configuration.
+    Container for fully resolved experiment settings.
 
     Attributes:
-        cfg: The full parsed configuration dictionary.
-        seeds: Expanded list of random seeds for the experiment.
-        base_default: Default base estimator specification, or None if not provided.
-        base_est_by_view: Mapping of view name to base estimator specification.
-        final_est: List of candidate final estimators as (label, estimator
-        specification) tuples.
-        meta_name: Name of the metafeature strategy.
-        output_dir: Directory where experiment outputs will be stored.
-        logs_dir: Directory where logs will be written.
+        cfg: Full (validated) configuration dictionary.
+        seeds: Expanded list of random seeds for this run/set of runs.
+        base_default: Default base estimator instance, or None if omitted.
+        base_est_by_view: Per-view base estimator instances.
+        final_est: List of (human_label, estimator_instance) for final stage.
+        meta_name: Selected metafeature strategy name.
+        output_dir: Destination directory for artifacts.
+        logs_dir: Destination directory for logs.
     """
     cfg: dict[str, Any]
     seeds: list[int]
@@ -903,21 +902,25 @@ class ExperimentConfig:
     logs_dir: Path
 
 def resolve_config(raw_cfg: dict[str, Any]) -> ExperimentConfig:
-  """Resolves a raw configuration into an ExperimentConfig object.
-
-  Validates the input, expands seeds, substitutes placeholders in paths,
-  and instantiates estimators.
-
-  Args:
-    raw_cfg: The raw configuration dictionary from merged YAML files.
-
-  Returns:
-    An ExperimentConfig object with resolved settings.
-
-  Raises:
-    ValueError: If the configuration is invalid (via _validate_config).
-    TypeError: If estimator specifications are invalid (via _make_estimator).
   """
+  Resolve a raw configuration into a structured `ExperimentConfig`.
+
+    Steps:
+      1) Validate the raw configuration.
+      2) Expand `random_seed` into a concrete list of integers.
+      3) Substitute placeholders in output paths (`${exp_name}`, `${now}`).
+      4) Instantiate base and final estimator(s).
+
+    Args:
+        raw_cfg: Raw configuration dictionary (merged from YAML files).
+
+    Returns:
+        ExperimentConfig: The resolved experiment configuration.
+
+    Raises:
+        ValueError: For invalid configuration (via validators) or invalid selection index.
+        TypeError: For invalid estimator specifications (via `_make_estimator`).
+    """
   _validate_config(raw_cfg)
   cfg = dict(raw_cfg)  # shallow copy
 
