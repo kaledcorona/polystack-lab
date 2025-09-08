@@ -244,7 +244,45 @@ def _label_for(spec: Any) -> str:
     
     return "final"
 
-def _expand_seeds(cfg: dict) -> list[int]:
+def _expand_seeds(cfg: dict[str, Any]) -> list[int]:
+    """
+    Expand a random seed configuration into a list of integer seeds.
+
+    The configuration is expected to be under the 'random_seed' key with
+    optional 'base' and 'iterations' entries:
+
+    Example YAML:
+        random_seed:
+            base: 100       # optional, defaults to 0
+            iterations: 3   # optional, defauls to 1
+
+    Behavior:
+        * If both 'base' and 'iterations' are provided, returns a sequential
+        list of seeds starting at 'base' with 'iterations' values.
+        * If only 'base' is provided, returns '[base]'.
+        * If only 'iterations' is provided, returns '[0,1,2,...]'.
+        * If neither is provided, returns '[0]'.
+
+    Args:
+        cfg (dict[str, Any]): Configuration dictionary containing a 'random_seed' block.
+
+    Returns:
+        List[int]: Expanded list of seeds.
+
+    Raises:
+        TypeError: If ``base`` or ``iterations`` are not integers or ``None``.
+        KeyError: If ``"random_seed"`` is missing from ``cfg``.
+
+    Examples:
+        >>> _expand_seeds({"random_seed": {"base": 100, "iterations": 3}})
+        [100, 101, 102]
+        >>> _expand_seeds({"random_seed": {"base": 7}})
+        [7]
+        >>> _expand_seeds({"random_seed": {"iterations": 3}})
+        [0, 1, 2]
+        >>> _expand_seeds({"random_seed": {}})
+        [0]
+    """
     # priority: explicit list > seeds.{count,base} > iterations
     if "seeds" in cfg:
         s = cfg["seeds"]
