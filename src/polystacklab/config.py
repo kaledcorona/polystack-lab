@@ -158,8 +158,12 @@ def _import_object(dotted: str):
         >>> _import_object("pathlib.Path")
         <class 'pathlib.Path'>
     """
-    mod, name = dotted.rsplit(".", 1)
-    return getattr(importlib.import_module(mod), name)
+    if "." not in dotted:
+        raise ValueError(f"Invalid dotted path '{dotted}'; must contain a '.'")
+
+    module_name, attr_name = dotted.rsplit(".", 1)
+    module = importlib.import_module(module_name)
+    return getattr(module, attr_name)
 
 def _make_estimator(spec: Any):
     if isinstance(spec, dict) and "class" in spec:
