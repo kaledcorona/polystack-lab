@@ -166,6 +166,37 @@ def _import_object(dotted: str):
     return getattr(module, attr_name)
 
 def _make_estimator(spec: Any):
+    """
+    Instantiate an object from a specification dictionary.
+
+    The specification must be a dictionary containing:
+        * 'class': A fully dotted path to the class to import.
+        * 'params' (optional): A dictionary of keyword arguments to pass
+            to the class constructor.
+
+    Args:
+        spec (Any): The specification of the estimator. Must be a dictionary
+        with a 'class' key and optionally a 'params' mapping.
+
+    Returns:
+        Any: An instance of the specified class, constructed with the given
+        parameters.
+
+    Raises:
+        TypeError: If ``spec`` is not a dictionary with a ``"class"`` key.
+        ModuleNotFoundError: If the module in the dotted path cannot be imported.
+        AttributeError: If the class is not found in the module.
+        TypeError: If the provided parameters do not match the class
+            constructor.
+
+    Examples:
+        >>> spec = {
+        ...     "class": "sklearn.ensemble.RandomForestClassifier",
+        ...     "params": {"n_estimators": 200}
+        ... }
+        >>> model = _make_estimator(spec)
+        >>> model.fit(X, Y)
+    """
     if isinstance(spec, dict) and "class" in spec:
         cls = _import_object(spec["class"])
         params = dict(spec.get("params", {}))
