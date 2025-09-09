@@ -19,7 +19,7 @@ dependencies = [
   #"giotto-tda",
   "matplotlib",
   "pyyaml",
-  #"polystack",
+  "polystack @ https://github.com/kaledcorona/polystack/releases/download/v0.1.0/polystack-0.1.0-py3-none-any.whl",
 ]
 
 [project.urls]
